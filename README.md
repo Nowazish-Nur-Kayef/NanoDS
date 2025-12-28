@@ -312,7 +312,7 @@ Contributions are welcome! Here's how you can help:
 
 ```bash
 # Fork and clone
-git clone https://github.com/YOUR_USERNAME/NanoDS.git
+git clone https://github.com/Nowazish-Nur-Kayef/NanoDS.git
 cd NanoDS
 
 # Make changes
