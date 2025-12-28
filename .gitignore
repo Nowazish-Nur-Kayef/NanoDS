@@ -1,23 +1,41 @@
+# =============================================================================
+# NanoDS . gitignore
+# Cross-platform (Linux, Windows, macOS)
+# =============================================================================
+
 # Compiled executables
 nanods_test
+nanods_test.exe
+nanods_custom
+nanods_custom.exe
 my_test
-*.out
+my_test.exe
+*. out
 *.exe
+a.out
 
 # Object files
 *.o
-*.obj
+*. obj
 *.ko
 *.elf
 
+# Precompiled Headers
+*.gch
+*.pch
+
 # Libraries
 *.lib
-*.a
-*. la
+*. a
+*.la
 *.lo
+
+# Shared objects (Linux/macOS)
 *.so
 *.so.*
 *.dylib
+
+# DLLs (Windows)
 *.dll
 
 # Debug files
@@ -29,25 +47,130 @@ my_test
 # Core dumps
 core
 core.*
+vgcore.*
 
 # Valgrind output
-vgcore.*
-*. log
+*.log
+valgrind-out.txt
+massif. out.*
+cachegrind.out.*
 
+# =============================================================================
 # Editor/IDE files
+# =============================================================================
+
+# Visual Studio Code
 .vscode/
+*. code-workspace
+
+# JetBrains IDEs (CLion, etc.)
 .idea/
+*.iml
+cmake-build-*/
+
+# Vim
 *.swp
 *.swo
 *~
-.DS_Store
+.*.sw?
 
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# =============================================================================
+# OS-specific files
+# =============================================================================
+
+# macOS
+.DS_Store
+. AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE. BIN/
+
+# Linux
+. directory
+. Trash-*
+
+# =============================================================================
 # Build directories
+# =============================================================================
+
 build/
 dist/
 bin/
 obj/
+out/
+target/
+Debug/
+Release/
+x64/
+x86/
 
-# Test artifacts
+# =============================================================================
+# Testing & Release artifacts
+# =============================================================================
+
 test_results/
 *.test
+coverage/
+*.gcda
+*.gcno
+*.gcov
+
+# Release packages
+releases/
+*.tar. gz
+*.zip
+*.7z
+
+# =============================================================================
+# Temporary files
+# =============================================================================
+
+*. tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.cache
+
+# =============================================================================
+# Documentation build output
+# =============================================================================
+
+docs/_build/
+site/
+_site/
+
+# =============================================================================
+# Package manager files (if using)
+# =============================================================================
+
+# Conan
+conaninfo.txt
+conanbuildinfo.*
+conan. lock
+
+# vcpkg
+vcpkg_installed/
+
+# CMake (if added later)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile. in
+compile_commands.json
