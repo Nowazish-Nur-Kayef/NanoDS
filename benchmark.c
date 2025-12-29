@@ -13,7 +13,7 @@
 
 /* Cross-platform time measurement */
 #if defined(_WIN32) || defined(_WIN64)
-    #include <windows. h>
+    #include <windows.h>
     
     double get_time_ms(void) {
         LARGE_INTEGER frequency;
