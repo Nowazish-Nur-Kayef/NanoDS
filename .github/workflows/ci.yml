@@ -3,23 +3,20 @@ name: CI
 on: 
   push:
     branches:  [ main, develop ]
-  pull_request:  
+  pull_request: 
     branches: [ main ]
-
-permissions:
-  contents: read
 
 jobs:
   # ============================================================================
   # Multi-Platform Build & Test
   # ============================================================================
-  build-and-test:  
+  build-and-test: 
     name: Build & Test (${{ matrix.os }})
-    runs-on: ${{ matrix. os }}
+    runs-on: ${{ matrix.os }}
     
     strategy:
       fail-fast: false
-      matrix:  
+      matrix: 
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
@@ -29,15 +26,15 @@ jobs:
           - os: windows-latest
             cc: gcc
     
-    steps:  
+    steps:
     - name: Checkout code
-      uses:  actions/checkout@v4
+      uses: actions/checkout@v4
     
     - name: Setup GCC (Windows)
       if: matrix.os == 'windows-latest'
       uses: msys2/setup-msys2@v2
-      with:  
-        msystem: MINGW64
+      with:
+        msystem:  MINGW64
         update: true
         install: >-
           mingw-w64-x86_64-gcc
@@ -68,16 +65,16 @@ jobs:
     - name: Build benchmark (Unix)
       if: matrix.os != 'windows-latest'
       run: |
-        ${{ matrix.cc }} -std=c11 -Wall -Wextra -O2 benchmark. c -o nanods_benchmark
+        ${{ matrix.cc }} -std=c11 -Wall -Wextra -O2 benchmark.c -o nanods_benchmark
       shell: bash
     
     - name: Build benchmark (Windows)
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: |
-        gcc -std=c11 -Wall -Wextra -O2 benchmark.c -o nanods_benchmark.exe
+        gcc -std=c11 -Wall -Wextra -O2 benchmark. c -o nanods_benchmark. exe
     
-    - name: Run benchmark (Unix)
+    - name:  Run benchmark (Unix)
       if: matrix.os != 'windows-latest'
       run: ./nanods_benchmark
       shell: bash
@@ -94,12 +91,12 @@ jobs:
     name: Memory Leak Check (Valgrind)
     runs-on: ubuntu-latest
     
-    steps: 
+    steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses:  actions/checkout@v4
     
     - name: Install Valgrind
-      run:  sudo apt-get update && sudo apt-get install -y valgrind
+      run: sudo apt-get update && sudo apt-get install -y valgrind
     
     - name: Build with debug symbols
       run: gcc -std=c11 -Wall -Wextra -g -O0 test.c -o nanods_test
@@ -110,7 +107,6 @@ jobs:
                  --show-leak-kinds=all \
                  --track-origins=yes \
                  --error-exitcode=1 \
-                 --errors-for-leak-kinds=all \
                  ./nanods_test
 
   # ============================================================================
@@ -120,7 +116,7 @@ jobs:
     name: Hard Safety Mode Test
     runs-on: ubuntu-latest
     
-    steps:
+    steps: 
     - name: Checkout code
       uses: actions/checkout@v4
     
@@ -133,13 +129,13 @@ jobs:
   # ============================================================================
   # Compiler Compatibility Check
   # ============================================================================
-  compiler-compat:  
+  compiler-compat: 
     name: Compiler Compatibility (${{ matrix.compiler }})
     runs-on: ubuntu-latest
     
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         compiler: 
           - gcc-11
           - gcc-12
@@ -147,28 +143,19 @@ jobs:
           - clang-15
     
     steps:
-    - name:  Checkout code
+    - name: Checkout code
       uses: actions/checkout@v4
     
     - name: Install compiler
       run: |
         sudo apt-get update
-        if [[ "${{ matrix.compiler }}" == gcc-* ]]; then
-          sudo apt-get install -y ${{ matrix.compiler }} g++-${matrix.compiler#gcc-}
-        else
-          sudo apt-get install -y ${{ matrix.compiler }}
-        fi
+        sudo apt-get install -y ${{ matrix.compiler }}
     
-    - name: Build with GCC
-      if: startsWith(matrix.compiler, 'gcc-')
-      run: ${{ matrix.compiler }} -std=c11 -Wall -Wextra -O2 test. c -o nanods_test
-    
-    - name: Build with Clang
-      if: startsWith(matrix.compiler, 'clang-')
-      run: ${{ matrix.compiler }} -std=c11 -Wall -Wextra -O2 test. c -o nanods_test
+    - name: Build
+      run: ${{ matrix.compiler }} -std=c11 -Wall -Wextra -O2 test.c -o nanods_test
     
     - name: Run tests
-      run: ./nanods_test
+      run:  ./nanods_test
 
   # ============================================================================
   # Code Coverage
@@ -184,7 +171,7 @@ jobs:
     - name: Install gcov/gcovr
       run: sudo apt-get update && sudo apt-get install -y gcovr
     
-    - name:  Build with coverage
+    - name: Build with coverage
       run: gcc -std=c11 -Wall -Wextra --coverage -O0 test.c -o nanods_test
     
     - name: Run tests
@@ -196,9 +183,9 @@ jobs:
         gcovr --txt coverage.txt
     
     - name: Upload coverage report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name:  coverage-report
+        name: coverage-report
         path: coverage.txt
 
   # ============================================================================
@@ -208,18 +195,18 @@ jobs:
     name: Performance Baseline
     runs-on: ubuntu-latest
     
-    steps:  
+    steps: 
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Build benchmark
+    - name:  Build benchmark
       run: gcc -std=c11 -Wall -Wextra -O3 -march=native benchmark.c -o nanods_benchmark
     
     - name: Run benchmark
       run:  ./nanods_benchmark | tee benchmark_results.txt
     
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: benchmark_results.txt
