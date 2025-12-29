@@ -121,7 +121,7 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Build with hard safety
-      run: gcc -std=c11 -Wall -Wextra -DNANODS_HARD_SAFETY -O2 test. c -o nanods_test_safe
+      run: gcc -std=c11 -Wall -Wextra -DNANODS_HARD_SAFETY -O2 test.c -o nanods_test_safe
     
     - name:  Run hard safety tests
       run:  ./nanods_test_safe
