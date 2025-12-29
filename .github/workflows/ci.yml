@@ -1,0 +1,184 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request: 
+    branches: [ main ]
+
+jobs:
+  # ============================================================================
+  # Multi-Platform Build & Test
+  # ============================================================================
+  build-and-test: 
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix: 
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            cc: gcc
+          - os: macos-latest
+            cc: clang
+          - os: windows-latest
+            cc: gcc
+    
+    steps: 
+    - name: Checkout code
+      uses:  actions/checkout@v4
+    
+    - name: Setup GCC (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with: 
+        install: gcc make
+    
+    - name: Build test suite
+      run: |
+        ${{ matrix.cc }} -std=c11 -Wall -Wextra -O2 test. c -o nanods_test
+      shell: bash
+    
+    - name: Run tests
+      run: ./nanods_test
+      shell:  bash
+    
+    - name:  Build benchmark
+      run: |
+        ${{ matrix.cc }} -std=c11 -Wall -Wextra -O2 benchmark.c -o nanods_benchmark
+      shell: bash
+    
+    - name: Run benchmark
+      run:  ./nanods_benchmark
+      shell: bash
+
+  # ============================================================================
+  # Memory Leak Check (Valgrind - Linux only)
+  # ============================================================================
+  memory-check:
+    name: Memory Leak Check (Valgrind)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses:  actions/checkout@v4
+    
+    - name: Install Valgrind
+      run:  sudo apt-get update && sudo apt-get install -y valgrind
+    
+    - name: Build with debug symbols
+      run: gcc -std=c11 -Wall -Wextra -g -O0 test.c -o nanods_test
+    
+    - name: Run Valgrind
+      run: |
+        valgrind --leak-check=full \
+                 --show-leak-kinds=all \
+                 --track-origins=yes \
+                 --error-exitcode=1 \
+                 ./nanods_test
+    
+    - name: Check for memory leaks
+      run:  |
+        if [ $? -eq 0 ]; then
+          echo "✅ No memory leaks detected"
+        else
+          echo "❌ Memory leaks found!"
+          exit 1
+        fi
+
+  # ============================================================================
+  # Hard Safety Mode Test
+  # ============================================================================
+  hard-safety-test:
+    name: Hard Safety Mode Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Build with hard safety
+      run: gcc -std=c11 -Wall -Wextra -DNANODS_HARD_SAFETY -O2 test.c -o nanods_test_safe
+    
+    - name: Run hard safety tests
+      run: ./nanods_test_safe
+
+  # ============================================================================
+  # Compiler Compatibility Check
+  # ============================================================================
+  compiler-compat: 
+    name: Compiler Compatibility (${{ matrix.compiler }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        compiler: 
+          - gcc-9
+          - gcc-10
+          - gcc-11
+          - gcc-12
+          - clang-12
+          - clang-14
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install compiler
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${{ matrix.compiler }}
+    
+    - name: Build
+      run: ${{ matrix.compiler }} -std=c11 -Wall -Wextra -O2 test.  c -o nanods_test
+    
+    - name: Run tests
+      run: ./nanods_test
+
+  # ============================================================================
+  # Code Coverage (Optional)
+  # ============================================================================
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install gcov
+      run: sudo apt-get update && sudo apt-get install -y gcovr
+    
+    - name:  Build with coverage
+      run: gcc -std=c11 -Wall -Wextra --coverage test.c -o nanods_test
+    
+    - name: Run tests
+      run: ./nanods_test
+    
+    - name: Generate coverage report
+      run: gcovr --print-summary
+
+  # ============================================================================
+  # Performance Regression Check
+  # ============================================================================
+  performance-check:
+    name: Performance Baseline
+    runs-on: ubuntu-latest
+    
+    steps: 
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name:  Build benchmark
+      run: gcc -std=c11 -Wall -Wextra -O3 -march=native benchmark.c -o nanods_benchmark
+    
+    - name: Run benchmark
+      run:  ./nanods_benchmark | tee benchmark_results.txt
+    
+    - name: Upload results
+      uses: actions/upload-artifact@v3
+      with:
+        name:  benchmark-results
+        path: benchmark_results.txt
