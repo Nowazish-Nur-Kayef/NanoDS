@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,164 +11,153 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Doubly linked list implementation
 - Queue/Deque data structures
 - Binary search tree
-- Performance optimization guide
 - More comprehensive examples
 
 ---
 
-## [0.1.0] - 2025-12-29
+## [0.1.1] - 2025-01-XX
 
-### Added
+### Added - The "Ecosystem" Update
 
-#### Core Features
-- **NanoVector**: Generic type-safe dynamic arrays
-  - Automatic capacity doubling with exponential growth
-  - Type-safe macros for compile-time safety
-  - Pre-defined types: `IntVector`, `FloatVector`, `DoubleVector`, `CharVector`
-  - API: `nv_init`, `nv_push`, `nv_get`, `nv_set`, `nv_pop`, `nv_size`, `nv_empty`, `nv_clear`, `nv_free`
-  
-- **NanoStack**:  LIFO stack using composition over NanoVector
-  - Zero-copy implementation leveraging existing vector code
-  - API: `ns_init`, `ns_push`, `ns_pop`, `ns_peek`, `ns_size`, `ns_empty`, `ns_free`
-  
-- **NanoList**:  Singly linked list
-  - O(1) push/pop operations at front and back
-  - Efficient memory usage with per-node allocation
-  - API: `nl_init`, `nl_push_front`, `nl_push_back`, `nl_pop_front`, `nl_size`, `nl_empty`, `nl_free`
-  
-- **NanoMap**: String-keyed hash map
-  - FNV-1a hash algorithm for collision resistance
-  - Separate chaining for collision resolution
-  - Dynamic bucket allocation
-  - Iterator support for traversal
-  - API: `nm_init`, `nm_set`, `nm_get`, `nm_has`, `nm_remove`, `nm_size`, `nm_empty`, `nm_clear`, `nm_free`
+#### Modularity & Organization
+- **Split-Header Pattern**:  Reorganized codebase into modular components
+  - `src/core. h` - Core utilities and allocator interface
+  - `src/vector_impl.h` - Vector implementation
+  - `src/stack_impl.h` - Stack implementation
+  - `src/list_impl.h` - List implementation
+  - `src/map_impl.h` - Map implementation
+- **Single-File Bundler**: `scripts/bundle.py` to merge split headers into one file
+  - Maintains single-header distribution model
+  - Easier maintenance with modular source
 
-#### Safety Features
-- **Hybrid Safety System**: Dual-mode error checking
-  - **Debug Mode** (default): Uses `assert()` for development-time error detection
-  - **Hard Safety Mode**: Define `NANODS_HARD_SAFETY` for production runtime checks
-  - Comprehensive error codes:  `NANODS_OK`, `NANODS_ERR_NOMEM`, `NANODS_ERR_BOUNDS`, `NANODS_ERR_EMPTY`, `NANODS_ERR_OVERFLOW`, `NANODS_ERR_NOTFOUND`, `NANODS_ERR_NULL`
-  
-- **Integer Overflow Protection**: All size calculations checked against `SIZE_MAX`
-  - `nanods_check_mul_overflow()` for multiplication
-  - `nanods_check_add_overflow()` for addition
-  
-- **Memory Safety**:
-  - Safe reallocation wrappers to prevent leaks on `realloc()` failure
-  - Bounds checking on all array access operations
-  - NULL pointer validation on all public APIs
-  - Secure free with memory zeroing:  `nv_secure_free`, `nm_secure_free`
+#### Functional Programming Features
+- **`nv_map_TYPE()`**: Apply function to every element in vector
+  - Example:  `nv_map_int(&vec, &result, double_value)`
+- **`nv_filter_TYPE()`**: Create new vector based on predicate
+  - Example:  `nv_filter_int(&vec, &result, is_even)`
+- Enables functional-style C programming (map/filter/reduce patterns)
 
-#### Custom Allocator Support
-- **Allocator Interface** for embedded systems and custom memory management
-  - `NanoAllocator` struct with function pointers:  `malloc_fn`, `realloc_fn`, `free_fn`
-  - `nanods_set_allocator()` to override default system allocator
-  - `nanods_get_allocator()` to query current allocator
-  - All internal allocations go through allocator interface
+#### Performance & Benchmarking
+- **Comprehensive Benchmark Suite**: 
+  - `benchmarks/bench_vector.c` - Vector performance metrics
+  - `benchmarks/bench_map.c` - Hash map performance across scales (1K-1M entries)
+  - `benchmarks/bench_comparison.c` - NanoDS vs naive implementation
+  - `benchmarks/run_benchmarks.sh` - Automated benchmark runner
+- **Empirical Performance Data**: 
+  - CSV export for performance tracking
+  - Cross-platform timing (Windows, macOS, Linux)
+  - Throughput and latency metrics
 
-#### Documentation
-- **Doxygen-style API documentation** in header file
-  - Full function documentation with `@brief`, `@param`, `@return`
-  - Grouped documentation with `@defgroup`
-  - Usage examples in header comments
-  
-- **Comprehensive README. md**: 
-  - Quick start guide
-  - API reference tables
-  - Security specifications
-  - Build instructions
-  - Real-world usage examples
+#### Package Manager Integration
+- **CMake Support**: Full CMakeLists.txt for modern C/C++ projects
+  - `add_subdirectory()` support
+  - `find_package()` integration
+  - Install targets for system-wide installation
+  - Configurable options (tests, benchmarks, examples, hard safety)
+- **pkg-config Support**: `nanods.pc.in` template
+  - Easy linking on Linux:  `pkg-config --cflags --libs nanods`
+  - Integration with Autotools and other build systems
 
-#### Testing & CI/CD
-- **GitHub Actions CI/CD Pipeline** (`.github/workflows/ci.yml`):
-  - Multi-platform builds:  Ubuntu, macOS, Windows
-  - Multiple compiler versions: GCC 9-12, Clang 12-14
-  - Automated memory leak detection with Valgrind
-  - Hard safety mode testing
-  - Code coverage reporting
-  - Performance regression checks
-  
-- **Comprehensive Test Suite** (`test. c`):
-  - Unit tests for all data structures
-  - Error handling tests
-  - Edge case validation
-  - Custom struct support tests
-  - 100% Valgrind verified (zero memory leaks)
+#### Real-World Examples
+- **`examples/word_frequency.c`**: Word counter using NanoMap
+  - Demonstrates hash map usage
+  - Text processing and string manipulation
+  - Iterator patterns
+- **`examples/command_history.c`**: CLI history using NanoVector
+  - Demonstrates vector usage
+  - Search and filtering
+  - Sequential data management
 
-- **Performance Benchmark Suite** (`benchmark.c`):
-  - 1 million operations per data structure
-  - Cross-platform high-resolution timing
-  - Ops/second and per-operation latency metrics
-  - Baseline performance tracking in CI
+### Changed
 
-#### Build System
-- **Cross-Platform Makefile**:
-  - Automatic OS detection (Linux, macOS, Windows)
-  - Multiple build targets: `debug`, `release`, `safe`, `test`, `benchmark`
-  - Valgrind integration for memory checking
-  - Clean and help targets
+- **Repository Structure**:  Reorganized for better maintainability
+  - Modular source files in `src/`
+  - Dedicated `benchmarks/` directory
+  - Dedicated `examples/` directory
+  - Scripts in `scripts/` directory
+- **Makefile**: Enhanced with new targets
+  - `make examples` - Build all examples
+  - `make benchmarks` - Build all benchmarks
+  - `make bundle` - Create single-file distribution
+  - `make run-examples` - Run all examples
+  - `make run-benchmarks` - Run all benchmarks
+  - `make install` - System-wide installation
 
-### Security
+### Improved
 
-- **Memory Safety**:
-  - All allocations protected against integer overflow
-  - Safe reallocation prevents memory leaks
-  - Bounds checking on every array access
-  - NULL pointer checks on all APIs
-  
-- **Production Hardening**:
-  - Hard safety mode for runtime error checking without asserts
-  - Secure memory zeroing before deallocation
-  - FNV-1a hashing resistant to DoS attacks
-  
-- **Validation**:
-  - Valgrind verified:  zero memory leaks, zero errors
-  - Compiler warning-free with `-Wall -Wextra -Wpedantic`
-  - Tested on GCC, Clang, MSVC
-
-### Performance
-
-- **Vector Operations**:
-  - Push:  ~300+ million ops/sec (O3 optimization)
-  - Get: O(1) constant time
-  - Growth strategy: exponential doubling
-  
-- **Stack Operations**:
-  - Push/Pop: ~900+ million ops/sec
-  - Peek: O(1) constant time
-  
-- **List Operations**:
-  - Push front/back: O(1) constant time
-  - Pop front:  O(1) constant time
-  
-- **Map Operations**:
-  - Set/Get: O(1) average case
-  - FNV-1a hash: optimized for speed and distribution
+- **Developer Experience**: 
+  - Easier to navigate codebase with split headers
+  - Clear separation of concerns
+  - Better IDE support with modular files
+- **Distribution**:
+  - Both modular (for development) and single-file (for distribution)
+  - CMake integration for professional projects
+  - pkg-config for traditional Linux workflows
+- **Documentation**:
+  - Real-world examples show practical usage
+  - Benchmark data provides performance transparency
+  - CMake examples for integration
 
 ### Technical Details
 
-- **Language Standard**: C11 (`-std=c11`)
-- **Compiler Support**: GCC 4.9+, Clang 3.4+, MSVC 2015+
-- **Platform Support**: Linux, macOS, Windows, embedded systems
-- **Dependencies**: None (only standard C library)
-- **Header Size**: Single file, ~750 lines
-- **License**: MIT / Public Domain (user choice)
+- **Build System**: CMake 3.10+ support added
+- **Bundling**: Python 3 script for single-file generation
+- **Benchmarking**: High-resolution cross-platform timing
+- **Examples**: Production-quality demonstration code
 
-### Repository Structure
+---
 
-```
-NanoDS/
-├── nanods.h           # Main library (header-only)
-├── test.c             # Comprehensive test suite
-├── benchmark.c        # Performance benchmarks
-├── Makefile           # Cross-platform build system
-├── README.md          # Full documentation
-├── CHANGELOG.md       # This file
-├── LICENSE            # MIT License
-└── . github/
-    └── workflows/
-        └── ci.yml     # GitHub Actions CI/CD
-```
+## [0.1.0] - 2025-01-29
+
+### Added - Initial Production Release
+
+#### Core Features
+- **NanoVector**: Generic type-safe dynamic arrays
+  - Automatic capacity doubling
+  - Type-safe macros
+  - Pre-defined types: `IntVector`, `FloatVector`, `DoubleVector`, `CharVector`
+  
+- **NanoStack**:  LIFO stack using composition over NanoVector
+  - Zero-copy implementation
+  
+- **NanoList**: Singly linked list
+  - O(1) push/pop operations
+  
+- **NanoMap**: String-keyed hash map
+  - FNV-1a hash algorithm
+  - Separate chaining
+  - Iterator support
+
+#### Safety Features
+- **Hybrid Safety System**: Dual-mode error checking
+  - Debug Mode:  `assert()` for development
+  - Hard Safety Mode: Runtime checks with error codes
+  
+- **Integer Overflow Protection**
+- **Memory Safety**: Bounds checking, NULL validation, secure free
+- **Comprehensive Error Codes**
+
+#### Custom Allocator Support
+- **Allocator Interface** for embedded systems
+- All allocations go through configurable allocator
+
+#### Testing & CI/CD
+- **GitHub Actions CI/CD Pipeline**
+- **Comprehensive Test Suite**
+- **Performance Benchmark Suite**
+- **Cross-Platform Makefile**
+
+### Security
+- Memory safety guarantees
+- Integer overflow protection
+- FNV-1a hashing resistant to DoS
+- Valgrind verified (zero leaks)
+
+### Performance
+- Vector Push: ~340M ops/sec
+- Stack Push/Pop: ~920M ops/sec
+- List Push: ~53M ops/sec
+- Map Set/Get: ~500K ops/sec
 
 ---
 
@@ -176,61 +165,43 @@ NanoDS/
 
 ### Semantic Versioning Guide
 
-NanoDS follows [Semantic Versioning 2.0.0](https://semver.org/):
-
-- **MAJOR** version (X.0.0): Incompatible API changes
-- **MINOR** version (0.X.0): New functionality (backward-compatible)
-- **PATCH** version (0.0.X): Bug fixes (backward-compatible)
-
-### Version 0.1.0 Notes
-
-This is the **initial production release** of NanoDS.  While versioned as `0.1.0` to indicate it's a first release, it includes: 
-
-✅ Production-ready code quality  
-✅ Comprehensive test coverage  
-✅ Full CI/CD pipeline  
-✅ Complete documentation  
-✅ Memory safety guarantees  
-✅ Cross-platform support  
-
-**API Stability**: The API is considered stable.  Future 0.x releases will maintain backward compatibility except where explicitly noted.
+- **MAJOR** (X.0.0): Incompatible API changes
+- **MINOR** (0.X.0): New functionality (backward-compatible)
+- **PATCH** (0.0.X): Bug fixes (backward-compatible)
 
 ---
 
 ## Migration Guide
 
-### Upgrading from Pre-release Versions
+### Upgrading from v0.1.0 to v0.1.1
 
-If you used NanoDS before v0.1.0, note the following **breaking changes**:
+No breaking API changes.  New features are additions only.
 
-#### API Changes
-
-**Old (pre-v0.1.0):**
+**New Features Available:**
 ```c
-int value = nv_get_int(&vec, 0);  // Returns value directly
+// Functional operations (NEW in v0.1.1)
+int double_value(int x) { return x * 2; }
+nv_map_int(&vec, &result, double_value);
+
+int is_even(int x) { return x % 2 == 0; }
+nv_filter_int(&vec, &result, is_even);
 ```
 
-**New (v0.1.0):**
+**Modular Headers** (optional, for development):
 ```c
-int value;
-int err = nv_get_int(&vec, 0, &value);  // Returns error code
-if (err != NANODS_OK) {
-    // Handle error
-}
+// Old way (still works)
+#define NANODS_IMPLEMENTATION
+#include "nanods. h"
+
+// New way (for modular development)
+#include "nanods. h"  // Includes all src/*. h automatically
 ```
 
-**Reason**:  Consistent error handling across all functions.
-
-#### Error Handling
-
-All functions now return error codes instead of values: 
-
-| Function Type | Return Value |
-|--------------|--------------|
-| `nv_push`, `nv_set`, `nv_pop` | `int` (error code) |
-| `nv_get` | Error code, value via output parameter |
-| `nv_size`, `nv_empty` | `size_t` / `int` (no error code) |
-| `nv_init`, `nv_free`, `nv_clear` | `void` (no return) |
+**CMake Integration** (new):
+```cmake
+add_subdirectory(NanoDS)
+target_link_libraries(myapp PRIVATE nanods)
+```
 
 ---
 
@@ -238,11 +209,4 @@ All functions now return error codes instead of values:
 
 - **Repository**: https://github.com/Nowazish-Nur-Kayef/NanoDS
 - **Issues**: https://github.com/Nowazish-Nur-Kayef/NanoDS/issues
-- **Discussions**: https://github.com/Nowazish-Nur-Kayef/NanoDS/discussions
 - **Releases**: https://github.com/Nowazish-Nur-Kayef/NanoDS/releases
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to NanoDS.

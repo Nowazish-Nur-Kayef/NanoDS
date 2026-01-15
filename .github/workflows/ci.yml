@@ -1,9 +1,9 @@
 name: CI
 
-on: 
+on:
   push:
-    branches:  [ main, develop ]
-  pull_request:
+    branches: [ main, develop ]
+  pull_request: 
     branches: [ main ]
 
 jobs:
@@ -14,29 +14,29 @@ jobs:
     name: Build & Test (${{ matrix.os }})
     runs-on: ${{ matrix. os }}
     
-    strategy: 
+    strategy:
       fail-fast: false
-      matrix:
+      matrix: 
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
             cc: gcc
-          - os:  macos-latest
-            cc:  clang
+          - os: macos-latest
+            cc: clang
           - os: windows-latest
             cc: gcc
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses:  actions/checkout@v4
     
     - name: Setup GCC (Windows)
       if: matrix.os == 'windows-latest'
       uses: msys2/setup-msys2@v2
-      with:
+      with: 
         msystem: MINGW64
         update: true
-        install:  >-
+        install: >-
           mingw-w64-x86_64-gcc
           make
     
@@ -61,28 +61,106 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: ./nanods_test.exe
+
+  # ============================================================================
+  # Build Examples
+  # ============================================================================
+  build-examples:
+    name:  Build Examples (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     
-    - name: Build benchmark (Unix)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses:  actions/checkout@v4
+    
+    - name: Setup GCC (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+    
+    - name: Build word frequency (Unix)
       if: matrix.os != 'windows-latest'
       run: |
-        ${{ matrix.cc }} -std=c11 -Wall -Wextra -O2 benchmark.c -o nanods_benchmark
+        gcc -std=c11 -Wall -Wextra -O2 examples/word_frequency.c -o word_frequency
+        ./word_frequency
       shell: bash
     
-    - name: Build benchmark (Windows)
+    - name: Build word frequency (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: |
+        gcc -std=c11 -Wall -Wextra -O2 examples/word_frequency.c -o word_frequency.exe
+        ./word_frequency.exe
+    
+    - name: Build command history (Unix)
+      if: matrix.os != 'windows-latest'
+      run: |
+        gcc -std=c11 -Wall -Wextra -O2 examples/command_history.c -o command_history
+        ./command_history
+      shell: bash
+    
+    - name:  Build command history (Windows)
       if: matrix.os == 'windows-latest'
       shell:  msys2 {0}
       run: |
-        gcc -std=c11 -Wall -Wextra -O2 benchmark.c -o nanods_benchmark.exe
+        gcc -std=c11 -Wall -Wextra -O2 examples/command_history.c -o command_history.exe
+        ./command_history.exe
+
+  # ============================================================================
+  # Build Benchmarks
+  # ============================================================================
+  build-benchmarks: 
+    name: Build Benchmarks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     
-    - name: Run benchmark (Unix)
+    strategy:
+      fail-fast: false
+      matrix:
+        os:  [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses:  actions/checkout@v4
+    
+    - name: Setup GCC (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+    
+    - name: Build and run benchmarks (Unix)
       if: matrix.os != 'windows-latest'
-      run: ./nanods_benchmark
+      run:  |
+        gcc -std=c11 -Wall -Wextra -O3 -march=native benchmarks/bench_vector.c -o bench_vector
+        gcc -std=c11 -Wall -Wextra -O3 -march=native benchmarks/bench_map.c -o bench_map
+        gcc -std=c11 -Wall -Wextra -O3 -march=native benchmarks/bench_comparison.c -o bench_comparison
+        ./bench_vector
+        ./bench_map
+        ./bench_comparison
       shell: bash
     
-    - name: Run benchmark (Windows)
+    - name: Build and run benchmarks (Windows)
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
-      run: ./nanods_benchmark.exe
+      run: |
+        gcc -std=c11 -Wall -Wextra -O3 benchmarks/bench_vector.c -o bench_vector.exe
+        gcc -std=c11 -Wall -Wextra -O3 benchmarks/bench_map.c -o bench_map.exe
+        gcc -std=c11 -Wall -Wextra -O3 benchmarks/bench_comparison.c -o bench_comparison.exe
+        ./bench_vector.exe
+        ./bench_map.exe
+        ./bench_comparison.exe
 
   # ============================================================================
   # Memory Leak Check (Valgrind - Linux only)
@@ -92,7 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name:  Checkout code
+    - name: Checkout code
       uses:  actions/checkout@v4
     
     - name: Install Valgrind
@@ -113,18 +191,18 @@ jobs:
   # Hard Safety Mode Test
   # ============================================================================
   hard-safety-test:
-    name:  Hard Safety Mode Test
+    name: Hard Safety Mode Test
     runs-on: ubuntu-latest
     
-    steps: 
+    steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
     - name: Build with hard safety
       run: gcc -std=c11 -Wall -Wextra -DNANODS_HARD_SAFETY -O2 test.c -o nanods_test_safe
     
-    - name:  Run hard safety tests
-      run:  ./nanods_test_safe
+    - name: Run hard safety tests
+      run: ./nanods_test_safe
 
   # ============================================================================
   # Compiler Compatibility Check
@@ -133,7 +211,7 @@ jobs:
     name: Compiler Compatibility (${{ matrix.compiler }})
     runs-on: ubuntu-latest
     
-    strategy: 
+    strategy:
       fail-fast: false
       matrix:
         compiler: 
@@ -146,7 +224,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name:  Install compiler
+    - name: Install compiler
       run: |
         sudo apt-get update
         sudo apt-get install -y ${{ matrix.compiler }}
@@ -154,13 +232,78 @@ jobs:
     - name: Build
       run: ${{ matrix.compiler }} -std=c11 -Wall -Wextra -O2 test.c -o nanods_test
     
-    - name:  Run tests
-      run: ./nanods_test
+    - name: Run tests
+      run:  ./nanods_test
+
+  # ============================================================================
+  # CMake Build Test
+  # ============================================================================
+  cmake-build: 
+    name: CMake Build (${{ matrix.os }})
+    runs-on: ${{ matrix. os }}
+    
+    strategy: 
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - name:  Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1
+      with:
+        cmake-version: '3.20.x'
+    
+    - name:  Configure CMake (Unix)
+      if: matrix.os != 'windows-latest'
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Run tests
+      run: ctest --test-dir build --output-on-failure
+
+  # ============================================================================
+  # Bundle Script Test
+  # ============================================================================
+  bundle-test:
+    name:  Test Bundle Script
+    runs-on:  ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    
+    - name: Run bundle script
+      run: python3 scripts/bundle.py
+    
+    - name:  Verify bundled file exists
+      run: test -f nanods_bundled.h
+    
+    - name: Test bundled file compiles
+      run: |
+        echo '#define NANODS_IMPLEMENTATION' > test_bundle.c
+        echo '#include "nanods_bundled.h"' >> test_bundle.c
+        echo 'int main(void) { IntVector v; nv_init_int(&v); nv_free_int(&v); return 0; }' >> test_bundle.c
+        gcc -std=c11 -Wall -Wextra test_bundle.c -o test_bundle
+        ./test_bundle
 
   # ============================================================================
   # Code Coverage
   # ============================================================================
-  coverage: 
+  coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
     
@@ -171,7 +314,7 @@ jobs:
     - name: Install gcov/gcovr
       run: sudo apt-get update && sudo apt-get install -y gcovr
     
-    - name:  Build with coverage
+    - name: Build with coverage
       run: gcc -std=c11 -Wall -Wextra --coverage -O0 test.c -o nanods_test
     
     - name: Run tests
@@ -185,13 +328,13 @@ jobs:
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report
+        name:  coverage-report
         path: coverage.txt
 
   # ============================================================================
   # Performance Baseline
   # ============================================================================
-  performance-check: 
+  performance-check:
     name: Performance Baseline
     runs-on: ubuntu-latest
     
@@ -199,14 +342,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name:  Build benchmark
-      run: gcc -std=c11 -Wall -Wextra -O3 -march=native benchmark.c -o nanods_benchmark
+    - name:  Build benchmarks
+      run: |
+        gcc -std=c11 -Wall -Wextra -O3 -march=native benchmarks/bench_vector.c -o bench_vector
+        gcc -std=c11 -Wall -Wextra -O3 -march=native benchmarks/bench_map.c -o bench_map
     
-    - name: Run benchmark
-      run: ./nanods_benchmark | tee benchmark_results.txt
+    - name: Run benchmarks
+      run: |
+        ./bench_vector | tee bench_vector_results.txt
+        ./bench_map | tee bench_map_results.txt
     
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
-        path: benchmark_results. txt
+        path: |
+          bench_vector_results.txt
+          bench_map_results.txt

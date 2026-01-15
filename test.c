@@ -11,6 +11,19 @@ NANODS_DEFINE_VECTOR(Point)
 NANODS_DEFINE_STACK(Point)
 NANODS_DEFINE_LIST(Point)
 
+/* Helper functions for functional tests */
+int double_value(int x) {
+    return x * 2;
+}
+
+int is_even(int x) {
+    return x % 2 == 0;
+}
+
+int is_positive(int x) {
+    return x > 0;
+}
+
 int main(void) {
     printf("=== NanoDS v%s Test Suite ===\n\n", NANODS_VERSION);
     
@@ -156,21 +169,103 @@ int main(void) {
     for (size_t i = 0; i < nv_size_Point(&points); i++) {
         Point p;
         nv_get_Point(&points, i, &p);
-        printf("  Point[%zu]:  (%d, %d)\n", i, p.x, p.y);
+        printf("  Point[%zu]: (%d, %d)\n", i, p.x, p.y);
     }
     
     nv_free_Point(&points);
     printf("✅ Custom struct test passed\n\n");
     
     /* =========================================================================
-     * TEST 6: Error Handling (ONLY IN HARD SAFETY MODE)
+     * TEST 6: Functional Operations (NEW in v0.1.1)
      * =========================================================================
      */
-    printf("TEST 6: Error Handling\n");
+    printf("TEST 6: Functional Operations (Map/Filter)\n");
+    printf("-------------------------------------------\n");
+    
+    IntVector source;
+    nv_init_int(&source);
+    
+    for (int i = -2; i <= 5; i++) {
+        nv_push_int(&source, i);
+    }
+    
+    printf("Source vector:  ");
+    for (size_t i = 0; i < nv_size_int(&source); i++) {
+        int val;
+        nv_get_int(&source, i, &val);
+        printf("%d ", val);
+    }
+    printf("\n");
+    
+    /* Test map */
+    IntVector mapped;
+    int map_err = nv_map_int(&source, &mapped, double_value);
+    if (map_err != NANODS_OK) {
+        printf("❌ Map failed with error: %d\n", map_err);
+        nv_free_int(&source);
+        return 1;
+    }
+    
+    printf("Mapped (x2):   ");
+    for (size_t i = 0; i < nv_size_int(&mapped); i++) {
+        int val;
+        nv_get_int(&mapped, i, &val);
+        printf("%d ", val);
+    }
+    printf("\n");
+    
+    /* Test filter - even numbers */
+    IntVector filtered_even;
+    int filter_err = nv_filter_int(&source, &filtered_even, is_even);
+    if (filter_err != NANODS_OK) {
+        printf("❌ Filter failed with error: %d\n", filter_err);
+        nv_free_int(&source);
+        nv_free_int(&mapped);
+        return 1;
+    }
+    
+    printf("Filtered (even): ");
+    for (size_t i = 0; i < nv_size_int(&filtered_even); i++) {
+        int val;
+        nv_get_int(&filtered_even, i, &val);
+        printf("%d ", val);
+    }
+    printf("\n");
+    
+    /* Test filter - positive numbers */
+    IntVector filtered_positive;
+    filter_err = nv_filter_int(&source, &filtered_positive, is_positive);
+    if (filter_err != NANODS_OK) {
+        printf("❌ Filter failed with error:  %d\n", filter_err);
+        nv_free_int(&source);
+        nv_free_int(&mapped);
+        nv_free_int(&filtered_even);
+        return 1;
+    }
+    
+    printf("Filtered (positive): ");
+    for (size_t i = 0; i < nv_size_int(&filtered_positive); i++) {
+        int val;
+        nv_get_int(&filtered_positive, i, &val);
+        printf("%d ", val);
+    }
+    printf("\n");
+    
+    nv_free_int(&source);
+    nv_free_int(&mapped);
+    nv_free_int(&filtered_even);
+    nv_free_int(&filtered_positive);
+    printf("✅ Functional operations test passed\n\n");
+    
+    /* =========================================================================
+     * TEST 7: Error Handling (ONLY IN HARD SAFETY MODE)
+     * =========================================================================
+     */
+    printf("TEST 7: Error Handling\n");
     printf("----------------------\n");
     
 #ifdef NANODS_HARD_SAFETY
-    // Only test error codes in hard safety mode
+    /* Only test error codes in hard safety mode */
     IntVector empty_vec;
     nv_init_int(&empty_vec);
     

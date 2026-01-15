@@ -1,0 +1,7 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/include
+
+Name: NanoDS
+Description: Production-ready, memory-safe data structures for C
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}
