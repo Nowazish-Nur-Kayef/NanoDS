@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.1] - 2025-01-XX
+## [0.1.1] - 2026-01-16
 
 ### Added - The "Ecosystem" Update
 
@@ -107,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.1.0] - 2025-01-29
+## [0.1.0] - 2025-12-29
 
 ### Added - Initial Production Release
 
@@ -158,18 +158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stack Push/Pop: ~920M ops/sec
 - List Push: ~53M ops/sec
 - Map Set/Get: ~500K ops/sec
-
----
-
-## Version History
-
-### Semantic Versioning Guide
-
-- **MAJOR** (X.0.0): Incompatible API changes
-- **MINOR** (0.X.0): New functionality (backward-compatible)
-- **PATCH** (0.0.X): Bug fixes (backward-compatible)
-
----
 
 ## Migration Guide
 
