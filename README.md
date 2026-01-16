@@ -802,7 +802,7 @@ your_app: your_code.c
 - 📘 **[API Reference](https://github.com/Nowazish-Nur-Kayef/NanoDS#-api-gallery)** - Complete function documentation
 - 📝 **[CHANGELOG](CHANGELOG.md)** - Version history and migration guide
 - 💻 **[Examples](examples/)** - Real-world usage examples
-- 🧪 **[Tests](test. c)** - Comprehensive test suite
+- 🧪 **[Tests](test.c)** - Comprehensive test suite
 - 📊 **[Benchmarks](benchmarks/)** - Performance measurements
 
 ---
@@ -943,14 +943,12 @@ This project is under MIT Licensed:
 
 <div align="center">
 
-[![GitHub Issues](https://img.shields.io/badge/Issues-Support-blue? logo=github)](https://github.com/Nowazish-Nur-Kayef/NanoDS/issues)
+[![GitHub Issues](https://img.shields.io/badge/Issues-Support-blue?logo=github)](https://github.com/Nowazish-Nur-Kayef/NanoDS/issues)
 [![GitHub Discussions](https://img.shields.io/badge/Discussions-Community-green?logo=github)](https://github.com/Nowazish-Nur-Kayef/NanoDS/discussions)
-[![Documentation](https://img.shields.io/badge/Docs-Wiki-orange?logo=github)](https://github.com/Nowazish-Nur-Kayef/NanoDS/wiki)
 
 **Need help?**
 - 📧 **Bug Reports:** [Open an issue](https://github.com/Nowazish-Nur-Kayef/NanoDS/issues)
 - 💬 **Questions:** [Start a discussion](https://github.com/Nowazish-Nur-Kayef/NanoDS/discussions)
-- 📖 **Documentation:** [Read the wiki](https://github.com/Nowazish-Nur-Kayef/NanoDS/wiki)
 
 </div>
 
@@ -986,10 +984,6 @@ git clone https://github.com/Nowazish-Nur-Kayef/NanoDS.git
 <p>
   <b>Made with ❤️ for the C community</b><br>
   <i>Production-ready • Memory-safe • Zero dependencies</i>
-</p>
-
-<p>
-  <a href="#-nanods">Back to top ↑</a>
 </p>
 
 </div>
