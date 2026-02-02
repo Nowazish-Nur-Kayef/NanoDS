@@ -16,6 +16,7 @@
         T* data;                                                               \
         size_t size;                                                           \
         size_t capacity;                                                       \
+        uint8_t flags;                                                         \
     } NanoVector_##T;                                                          \
                                                                                \
     static inline void nv_init_##T(NanoVector_##T* vec) {                     \
@@ -23,16 +24,25 @@
         vec->data = NULL;                                                      \
         vec->size = 0;                                                         \
         vec->capacity = 0;                                                     \
+        vec->flags = NANODS_FLAG_NONE;                                         \
+    }                                                                          \
+                                                                               \
+    static inline void nv_init_ex_##T(NanoVector_##T* vec, uint8_t flags) {   \
+        NANODS_CHECK_NULL_VOID(vec);                                           \
+        vec->data = NULL;                                                      \
+        vec->size = 0;                                                         \
+        vec->capacity = 0;                                                     \
+        vec->flags = flags;                                                    \
     }                                                                          \
                                                                                \
     static inline int nv_reserve_##T(NanoVector_##T* vec, size_t new_capacity) { \
         NANODS_CHECK_NULL(vec, NANODS_ERR_NULL);                               \
         if (new_capacity <= vec->capacity) return NANODS_OK;                   \
         size_t byte_size;                                                      \
-        if (nanods_check_mul_overflow(new_capacity, sizeof(T), &byte_size))   \
+        if (NANODS_UNLIKELY(nanods_check_mul_overflow(new_capacity, sizeof(T), &byte_size))) \
             return NANODS_ERR_OVERFLOW;                                        \
         T* new_data = (T*)NANODS_REALLOC(vec->data, byte_size);               \
-        if (!new_data) return NANODS_ERR_NOMEM;                                \
+        if (NANODS_UNLIKELY(! new_data)) return NANODS_ERR_NOMEM;              \
         vec->data = new_data;                                                  \
         vec->capacity = new_capacity;                                          \
         return NANODS_OK;                                                      \
@@ -40,11 +50,11 @@
                                                                                \
     static inline int nv_push_##T(NanoVector_##T* vec, T value) {             \
         NANODS_CHECK_NULL(vec, NANODS_ERR_NULL);                               \
-        if (vec->size >= vec->capacity) {                                      \
+        if (NANODS_UNLIKELY(vec->size >= vec->capacity)) {                     \
             size_t new_capacity = vec->capacity == 0 ? 8 : vec->capacity * 2; \
-            if (new_capacity < vec->capacity) return NANODS_ERR_OVERFLOW;      \
+            if (NANODS_UNLIKELY(new_capacity < vec->capacity)) return NANODS_ERR_OVERFLOW; \
             int err = nv_reserve_##T(vec, new_capacity);                      \
-            if (err != NANODS_OK) return err;                                  \
+            if (NANODS_UNLIKELY(err != NANODS_OK)) return err;                 \
         }                                                                      \
         vec->data[vec->size++] = value;                                        \
         return NANODS_OK;                                                      \
@@ -78,7 +88,7 @@
     }                                                                          \
                                                                                \
     static inline int nv_empty_##T(const NanoVector_##T* vec) {               \
-        return vec ?  (vec->size == 0) : 1;                                     \
+        return vec ? (vec->size == 0) : 1;                                     \
     }                                                                          \
                                                                                \
     static inline void nv_clear_##T(NanoVector_##T* vec) {                    \
@@ -87,7 +97,11 @@
                                                                                \
     static inline void nv_free_##T(NanoVector_##T* vec) {                     \
         if (vec && vec->data) {                                                \
-            NANODS_FREE(vec->data);                                            \
+            if (vec->flags & NANODS_FLAG_SECURE) {                             \
+                nanods_secure_free(vec->data, vec->capacity * sizeof(T));      \
+            } else {                                                           \
+                NANODS_FREE(vec->data);                                        \
+            }                                                                  \
             vec->data = NULL;                                                  \
         }                                                                      \
         if (vec) {                                                             \
@@ -116,7 +130,7 @@
         for (size_t i = 0; i < vec->size; i++) {                               \
             T mapped = func(vec->data[i]);                                     \
             int err = nv_push_##T(out, mapped);                                \
-            if (err != NANODS_OK) {                                            \
+            if (NANODS_UNLIKELY(err != NANODS_OK)) {                           \
                 nv_free_##T(out);                                              \
                 return err;                                                    \
             }                                                                  \
@@ -133,7 +147,7 @@
         for (size_t i = 0; i < vec->size; i++) {                               \
             if (predicate(vec->data[i])) {                                     \
                 int err = nv_push_##T(out, vec->data[i]);                      \
-                if (err != NANODS_OK) {                                        \
+                if (NANODS_UNLIKELY(err != NANODS_OK)) {                       \
                     nv_free_##T(out);                                          \
                     return err;                                                \
                 }                                                              \

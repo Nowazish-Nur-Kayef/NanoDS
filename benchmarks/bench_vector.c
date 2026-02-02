@@ -23,7 +23,7 @@
     #include <mach/mach_time.h>
     double get_time_ms(void) {
         static mach_timebase_info_data_t timebase;
-        if (timebase.denom == 0) mach_timebase_info(&timebase);
+        if (timebase. denom == 0) mach_timebase_info(&timebase);
         uint64_t time = mach_absolute_time();
         return (double)(time * timebase.numer / timebase.denom) / 1000000.0;
     }
@@ -37,8 +37,11 @@
 
 int main(void) {
     printf("==============================================\n");
-    printf("  NanoDS Vector Benchmark\n");
+    printf("  NanoDS v%s Vector Benchmark\n", NANODS_VERSION);
     printf("==============================================\n\n");
+    
+    /* Initialize random seed */
+    nanods_seed_init(0);
     
     /* Benchmark 1: Sequential Push */
     {
@@ -53,9 +56,9 @@ int main(void) {
         double elapsed = end - start;
         
         printf("Sequential Push (%d ops):\n", ITERATIONS);
-        printf("  Time:         %.2f ms\n", elapsed);
-        printf("  Throughput:   %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
-        printf("  Latency:     %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
+        printf("  Time:          %.2f ms\n", elapsed);
+        printf("  Throughput:    %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
+        printf("  Latency:      %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
         
         nv_free_int(&vec);
     }
@@ -78,9 +81,9 @@ int main(void) {
         double elapsed = end - start;
         
         printf("Random Access Get (%d ops):\n", ITERATIONS);
-        printf("  Time:        %.2f ms\n", elapsed);
-        printf("  Throughput:  %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
-        printf("  Latency:     %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
+        printf("  Time:         %.2f ms\n", elapsed);
+        printf("  Throughput:   %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
+        printf("  Latency:      %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
         
         nv_free_int(&vec);
     }
@@ -99,9 +102,29 @@ int main(void) {
         double elapsed = end - start;
         
         printf("Pre-Reserved Push (%d ops):\n", ITERATIONS);
-        printf("  Time:        %.2f ms\n", elapsed);
-        printf("  Throughput:  %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
-        printf("  Latency:     %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
+        printf("  Time:         %.2f ms\n", elapsed);
+        printf("  Throughput:   %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
+        printf("  Latency:      %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
+        
+        nv_free_int(&vec);
+    }
+    
+    /* Benchmark 4: Secure Flag Performance */
+    {
+        IntVector vec;
+        nv_init_ex_int(&vec, NANODS_FLAG_SECURE);
+        
+        double start = get_time_ms();
+        for (int i = 0; i < ITERATIONS; i++) {
+            nv_push_int(&vec, i);
+        }
+        double end = get_time_ms();
+        double elapsed = end - start;
+        
+        printf("Secure Mode Push (%d ops):\n", ITERATIONS);
+        printf("  Time:         %.2f ms\n", elapsed);
+        printf("  Throughput:   %.0f ops/sec\n", ITERATIONS / (elapsed / 1000.0));
+        printf("  Latency:      %.3f µs/op\n\n", (elapsed * 1000.0) / ITERATIONS);
         
         nv_free_int(&vec);
     }

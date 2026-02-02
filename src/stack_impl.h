@@ -13,6 +13,10 @@
         nv_init_##T(stack);                                                    \
     }                                                                          \
                                                                                \
+    static inline void ns_init_ex_##T(NanoStack_##T* stack, uint8_t flags) {  \
+        nv_init_ex_##T(stack, flags);                                          \
+    }                                                                          \
+                                                                               \
     static inline int ns_push_##T(NanoStack_##T* stack, T value) {            \
         return nv_push_##T(stack, value);                                     \
     }                                                                          \

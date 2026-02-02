@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo "  NanoDS Benchmark Suite"
+echo "  NanoDS v1.0.0 Benchmark Suite"
 echo "========================================"
 echo ""
 
@@ -22,6 +22,8 @@ echo "Building benchmarks..."
 $CC -std=c11 -Wall -Wextra -O3 -march=native bench_vector.c -o bench_vector
 $CC -std=c11 -Wall -Wextra -O3 -march=native bench_map.c -o bench_map
 $CC -std=c11 -Wall -Wextra -O3 -march=native bench_comparison.c -o bench_comparison
+$CC -std=c11 -Wall -Wextra -O3 -march=native bench_list2.c -o bench_list2
+$CC -std=c11 -Wall -Wextra -O3 -march=native bench_ring.c -o bench_ring
 
 if [ $? -ne 0 ]; then
     echo "Build failed!"
@@ -50,16 +52,21 @@ echo "========================================"
 ./bench_comparison
 echo ""
 
-# Generate CSV
-echo "Generating results. csv..."
-echo "benchmark,iterations,time_ms,ops_per_sec" > results.csv
-./bench_vector | grep -A3 "Sequential Push" | tail -1 | awk '{print "vector_push,1000000," $2 "," $4}' >> results.csv
-
+echo "========================================"
+echo "Running Doubly Linked List Benchmark..."
+echo "========================================"
+./bench_list2
 echo ""
+
+echo "========================================"
+echo "Running Ring Buffer Benchmark..."
+echo "========================================"
+./bench_ring
+echo ""
+
 echo "========================================"
 echo "Benchmarks complete!"
-echo "Results saved to results.csv"
 echo "========================================"
 
 # Cleanup
-rm -f bench_vector bench_map bench_comparison
+rm -f bench_vector bench_map bench_comparison bench_list2 bench_ring

@@ -21,6 +21,7 @@
         NanoListNode_##T* head;                                                \
         NanoListNode_##T* tail;                                                \
         size_t size;                                                           \
+        uint8_t flags;                                                         \
     } NanoList_##T;                                                            \
                                                                                \
     static inline void nl_init_##T(NanoList_##T* list) {                      \
@@ -28,12 +29,21 @@
         list->head = NULL;                                                     \
         list->tail = NULL;                                                     \
         list->size = 0;                                                        \
+        list->flags = NANODS_FLAG_NONE;                                        \
+    }                                                                          \
+                                                                               \
+    static inline void nl_init_ex_##T(NanoList_##T* list, uint8_t flags) {    \
+        NANODS_CHECK_NULL_VOID(list);                                          \
+        list->head = NULL;                                                     \
+        list->tail = NULL;                                                     \
+        list->size = 0;                                                        \
+        list->flags = flags;                                                   \
     }                                                                          \
                                                                                \
     static inline int nl_push_front_##T(NanoList_##T* list, T value) {        \
         NANODS_CHECK_NULL(list, NANODS_ERR_NULL);                              \
         NanoListNode_##T* node = (NanoListNode_##T*)NANODS_MALLOC(sizeof(NanoListNode_##T)); \
-        if (!node) return NANODS_ERR_NOMEM;                                    \
+        if (NANODS_UNLIKELY(!node)) return NANODS_ERR_NOMEM;                   \
         node->data = value;                                                    \
         node->next = list->head;                                               \
         list->head = node;                                                     \
@@ -45,7 +55,7 @@
     static inline int nl_push_back_##T(NanoList_##T* list, T value) {         \
         NANODS_CHECK_NULL(list, NANODS_ERR_NULL);                              \
         NanoListNode_##T* node = (NanoListNode_##T*)NANODS_MALLOC(sizeof(NanoListNode_##T)); \
-        if (!node) return NANODS_ERR_NOMEM;                                    \
+        if (NANODS_UNLIKELY(!  node)) return NANODS_ERR_NOMEM;                   \
         node->data = value;                                                    \
         node->next = NULL;                                                     \
         if (list->tail) {                                                      \
@@ -65,25 +75,34 @@
         if (out) *out = node->data;                                            \
         list->head = node->next;                                               \
         if (list->head == NULL) list->tail = NULL;                             \
-        NANODS_FREE(node);                                                     \
+        if (list->flags & NANODS_FLAG_SECURE) {                                \
+            nanods_secure_free(node, sizeof(NanoListNode_##T));                \
+        } else {                                                               \
+            NANODS_FREE(node);                                                 \
+        }                                                                      \
         list->size--;                                                          \
         return NANODS_OK;                                                      \
     }                                                                          \
                                                                                \
     static inline size_t nl_size_##T(const NanoList_##T* list) {              \
-        return list ? list->size : 0;                                          \
+        return list ?   list->size : 0;                                          \
     }                                                                          \
                                                                                \
     static inline int nl_empty_##T(const NanoList_##T* list) {                \
-        return list ? (list->size == 0) : 1;                                   \
+        return list ?   (list->size == 0) : 1;                                   \
     }                                                                          \
                                                                                \
     static inline void nl_free_##T(NanoList_##T* list) {                      \
         if (! list) return;                                                     \
         NanoListNode_##T* current = list->head;                                \
+        int secure = (list->flags & NANODS_FLAG_SECURE);                       \
         while (current) {                                                      \
             NanoListNode_##T* next = current->next;                            \
-            NANODS_FREE(current);                                              \
+            if (secure) {                                                      \
+                nanods_secure_free(current, sizeof(NanoListNode_##T));         \
+            } else {                                                           \
+                NANODS_FREE(current);                                          \
+            }                                                                  \
             current = next;                                                    \
         }                                                                      \
         list->head = NULL;                                                     \

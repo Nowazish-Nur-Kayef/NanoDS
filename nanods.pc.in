@@ -2,6 +2,7 @@ prefix=@CMAKE_INSTALL_PREFIX@
 includedir=${prefix}/include
 
 Name: NanoDS
-Description: Production-ready, memory-safe data structures for C
+Description: Production-ready, memory-safe data structures for C with Anti-DoS security
 Version: @PROJECT_VERSION@
+URL: https://github.com/Nowazish-Nur-Kayef/NanoDS
 Cflags: -I${includedir}

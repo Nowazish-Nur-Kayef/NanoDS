@@ -1,12 +1,11 @@
 /**
  * @file word_frequency.c
- * @brief Real-world example:  Word frequency counter using NanoMap
+ * @brief Real-world example: Word frequency counter using NanoMap
  * 
- * Demonstrates: 
- * - Hash map usage for counting
- * - String key manipulation
+ * Demonstrates v1.0.0 features:
+ * - Hash map with randomized seeding (Anti-DoS)
  * - Iterator usage
- * - Practical text processing
+ * - Secure flag for sensitive data
  */
 
 #define NANODS_IMPLEMENTATION
@@ -17,18 +16,12 @@
 
 #define MAX_WORD_LEN 64
 
-/**
- * Convert string to lowercase
- */
 void to_lowercase(char* str) {
     for (int i = 0; str[i]; i++) {
         str[i] = tolower((unsigned char)str[i]);
     }
 }
 
-/**
- * Extract words from text and count frequencies
- */
 void count_word_frequencies(const char* text, NanoMap* freq_map) {
     char word[MAX_WORD_LEN];
     int word_idx = 0;
@@ -44,11 +37,9 @@ void count_word_frequencies(const char* text, NanoMap* freq_map) {
             word[word_idx] = '\0';
             to_lowercase(word);
             
-            /* Get current count */
             int* count_ptr = (int*)nm_get(freq_map, word);
             int new_count = count_ptr ? (*count_ptr + 1) : 1;
             
-            /* Allocate new count */
             int* new_count_ptr = (int*)malloc(sizeof(int));
             *new_count_ptr = new_count;
             
@@ -59,9 +50,6 @@ void count_word_frequencies(const char* text, NanoMap* freq_map) {
     }
 }
 
-/**
- * Find most common word
- */
 void find_most_common(NanoMap* freq_map, char* most_common_word, int* max_count) {
     NanoMapIterator iter;
     nm_iter_init(&iter, freq_map);
@@ -83,8 +71,12 @@ void find_most_common(NanoMap* freq_map, char* most_common_word, int* max_count)
 
 int main(void) {
     printf("==============================================\n");
-    printf("  Word Frequency Counter (NanoDS Demo)\n");
+    printf("  Word Frequency Counter (NanoDS v%s)\n", NANODS_VERSION);
     printf("==============================================\n\n");
+    
+    /* Initialize hash seed for Anti-DoS protection */
+    nanods_seed_init(0);
+    printf("Hash seed initialized: 0x%08X\n\n", nanods_get_seed());
     
     const char* text = 
         "The quick brown fox jumps over the lazy dog. "
@@ -94,9 +86,9 @@ int main(void) {
     
     printf("Text:\n\"%s\"\n\n", text);
     
-    /* Count word frequencies */
+    /* Count word frequencies with secure flag (for demonstration) */
     NanoMap freq_map;
-    nm_init(&freq_map);
+    nm_init_ex(&freq_map, NANODS_FLAG_SECURE);
     
     count_word_frequencies(text, &freq_map);
     
@@ -116,7 +108,8 @@ int main(void) {
     }
     
     printf("─────────────────────────────────\n");
-    printf("Total unique words: %zu\n\n", nm_size(&freq_map));
+    printf("Total unique words: %zu\n", nm_size(&freq_map));
+    printf("Hash seed: 0x%08X (Anti-DoS protected)\n\n", freq_map.seed);
     
     /* Find most common word */
     char most_common[MAX_WORD_LEN];
@@ -130,8 +123,8 @@ int main(void) {
     while (nm_iter_next(&iter, &key, &value) == NANODS_OK) {
         free(value);
     }
-    nm_free(&freq_map);
+    nm_free(&freq_map);  /* Secure free automatically wipes memory */
     
-    printf("✅ Done!\n");
+    printf("✅ Done!  (Memory securely wiped)\n");
     return 0;
 }

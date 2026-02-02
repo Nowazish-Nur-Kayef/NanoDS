@@ -1,6 +1,6 @@
 /**
- * @file map_impl. h
- * @brief String-keyed hash map implementation with FNV-1a hashing
+ * @file map_impl.h
+ * @brief String-keyed hash map with randomized seeding (Anti-DoS)
  */
 
 #ifndef NANODS_MAP_IMPL_H
@@ -21,11 +21,16 @@ typedef struct {
     NanoMapEntry** buckets;
     size_t bucket_count;
     size_t size;
+    uint32_t seed;
+    uint8_t flags;
 } NanoMap;
 
-static inline uint32_t nanods_fnv1a_hash(const char* key) {
+/**
+ * FNV-1a hash with seed (Anti-DoS protection)
+ */
+static inline uint32_t nanods_fnv1a_hash_seeded(const char* key, uint32_t seed) {
     NANODS_CHECK_NULL(key, 0);
-    uint32_t hash = 2166136261u;
+    uint32_t hash = 2166136261u ^ seed;
     while (*key) {
         hash ^= (uint8_t)(*key++);
         hash *= 16777619u;
@@ -38,27 +43,48 @@ static inline void nm_init(NanoMap* map) {
     map->buckets = NULL;
     map->bucket_count = 0;
     map->size = 0;
+    map->seed = nanods_get_seed();
+    map->flags = NANODS_FLAG_NONE;
+}
+
+static inline void nm_init_ex(NanoMap* map, uint8_t flags) {
+    NANODS_CHECK_NULL_VOID(map);
+    map->buckets = NULL;
+    map->bucket_count = 0;
+    map->size = 0;
+    map->seed = nanods_get_seed();
+    map->flags = flags;
 }
 
 static inline int nm_init_with_capacity(NanoMap* map, size_t bucket_count) {
     NANODS_CHECK_NULL(map, NANODS_ERR_NULL);
     if (bucket_count == 0) bucket_count = 16;
     size_t byte_size;
-    if (nanods_check_mul_overflow(bucket_count, sizeof(NanoMapEntry*), &byte_size))
+    if (NANODS_UNLIKELY(nanods_check_mul_overflow(bucket_count, sizeof(NanoMapEntry*), &byte_size)))
         return NANODS_ERR_OVERFLOW;
     map->buckets = (NanoMapEntry**)NANODS_MALLOC(byte_size);
-    if (!map->buckets) return NANODS_ERR_NOMEM;
+    if (NANODS_UNLIKELY(!map->buckets)) return NANODS_ERR_NOMEM;
     memset(map->buckets, 0, byte_size);
     map->bucket_count = bucket_count;
     map->size = 0;
+    map->seed = nanods_get_seed();
+    map->flags = NANODS_FLAG_NONE;
     return NANODS_OK;
+}
+
+static inline int nm_init_with_capacity_ex(NanoMap* map, size_t bucket_count, uint8_t flags) {
+    int err = nm_init_with_capacity(map, bucket_count);
+    if (NANODS_LIKELY(err == NANODS_OK)) {
+        map->flags = flags;
+    }
+    return err;
 }
 
 static inline NanoMapEntry* nm_find_entry(NanoMap* map, const char* key, size_t* out_bucket_idx) {
     NANODS_CHECK_NULL(map, NULL);
     NANODS_CHECK_NULL(key, NULL);
     if (map->bucket_count == 0) return NULL;
-    uint32_t hash = nanods_fnv1a_hash(key);
+    uint32_t hash = nanods_fnv1a_hash_seeded(key, map->seed);
     size_t bucket_idx = hash % map->bucket_count;
     if (out_bucket_idx) *out_bucket_idx = bucket_idx;
     NanoMapEntry* entry = map->buckets[bucket_idx];
@@ -74,7 +100,7 @@ static inline int nm_set(NanoMap* map, const char* key, void* value) {
     NANODS_CHECK_NULL(key, NANODS_ERR_NULL);
     if (map->bucket_count == 0) {
         int err = nm_init_with_capacity(map, 16);
-        if (err != NANODS_OK) return err;
+        if (NANODS_UNLIKELY(err != NANODS_OK)) return err;
     }
     size_t bucket_idx;
     NanoMapEntry* existing = nm_find_entry(map, key, &bucket_idx);
@@ -83,9 +109,9 @@ static inline int nm_set(NanoMap* map, const char* key, void* value) {
         return NANODS_OK;
     }
     NanoMapEntry* new_entry = (NanoMapEntry*)NANODS_MALLOC(sizeof(NanoMapEntry));
-    if (!new_entry) return NANODS_ERR_NOMEM;
+    if (NANODS_UNLIKELY(!new_entry)) return NANODS_ERR_NOMEM;
     new_entry->key = (char*)NANODS_MALLOC(strlen(key) + 1);
-    if (!new_entry->key) {
+    if (NANODS_UNLIKELY(!new_entry->key)) {
         NANODS_FREE(new_entry);
         return NANODS_ERR_NOMEM;
     }
@@ -114,15 +140,24 @@ static inline int nm_remove(NanoMap* map, const char* key) {
     NANODS_CHECK_NULL(map, NANODS_ERR_NULL);
     NANODS_CHECK_NULL(key, NANODS_ERR_NULL);
     if (map->bucket_count == 0) return NANODS_ERR_NOTFOUND;
-    uint32_t hash = nanods_fnv1a_hash(key);
+    uint32_t hash = nanods_fnv1a_hash_seeded(key, map->seed);
     size_t bucket_idx = hash % map->bucket_count;
     NanoMapEntry** indirect = &map->buckets[bucket_idx];
+    int secure = (map->flags & NANODS_FLAG_SECURE);
     while (*indirect) {
         NanoMapEntry* entry = *indirect;
         if (strcmp(entry->key, key) == 0) {
             *indirect = entry->next;
+            if (secure) {
+                size_t key_len = strlen(entry->key);
+                memset(entry->key, 0, key_len);
+            }
             NANODS_FREE(entry->key);
-            NANODS_FREE(entry);
+            if (secure) {
+                nanods_secure_free(entry, sizeof(NanoMapEntry));
+            } else {
+                NANODS_FREE(entry);
+            }
             map->size--;
             return NANODS_OK;
         }
@@ -140,13 +175,22 @@ static inline int nm_empty(const NanoMap* map) {
 }
 
 static inline void nm_clear(NanoMap* map) {
-    if (! map) return;
+    if (!map) return;
+    int secure = (map->flags & NANODS_FLAG_SECURE);
     for (size_t i = 0; i < map->bucket_count; i++) {
         NanoMapEntry* entry = map->buckets[i];
         while (entry) {
             NanoMapEntry* next = entry->next;
+            if (secure) {
+                size_t key_len = strlen(entry->key);
+                memset(entry->key, 0, key_len);
+            }
             NANODS_FREE(entry->key);
-            NANODS_FREE(entry);
+            if (secure) {
+                nanods_secure_free(entry, sizeof(NanoMapEntry));
+            } else {
+                NANODS_FREE(entry);
+            }
             entry = next;
         }
         map->buckets[i] = NULL;
@@ -175,7 +219,7 @@ static inline void nm_secure_free(NanoMap* map) {
                 memset(entry->key, 0, key_len);
                 NANODS_FREE(entry->key);
             }
-            NANODS_FREE(entry);
+            nanods_secure_free(entry, sizeof(NanoMapEntry));
             entry = next;
         }
     }

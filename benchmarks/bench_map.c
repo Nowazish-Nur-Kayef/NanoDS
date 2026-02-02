@@ -63,10 +63,20 @@ void benchmark_map(int size) {
     end = get_time_ms();
     double get_time = end - start;
     
-    printf("Map Size:  %d entries\n", size);
-    printf("  Set:  %.2f ms (%.0f ops/sec)\n", set_time, size / (set_time / 1000.0));
-    printf("  Get: %.2f ms (%.0f ops/sec)\n", get_time, size / (get_time / 1000.0));
-    printf("  Load Factor: %.2f\n\n", (double)map.size / map.bucket_count);
+    /* Benchmark:  Has */
+    start = get_time_ms();
+    for (int i = 0; i < size; i++) {
+        nm_has(&map, keys[i]);
+    }
+    end = get_time_ms();
+    double has_time = end - start;
+    
+    printf("Map Size: %d entries\n", size);
+    printf("  Set:   %.2f ms (%.0f ops/sec)\n", set_time, size / (set_time / 1000.0));
+    printf("  Get:  %.2f ms (%.0f ops/sec)\n", get_time, size / (get_time / 1000.0));
+    printf("  Has:  %.2f ms (%.0f ops/sec)\n", has_time, size / (has_time / 1000.0));
+    printf("  Load Factor: %.2f\n", (double)map.size / map.bucket_count);
+    printf("  Seed: 0x%08X (Anti-DoS enabled)\n\n", map.seed);
     
     /* Cleanup */
     nm_free(&map);
@@ -79,8 +89,12 @@ void benchmark_map(int size) {
 
 int main(void) {
     printf("==============================================\n");
-    printf("  NanoDS Map Benchmark\n");
+    printf("  NanoDS v%s Map Benchmark\n", NANODS_VERSION);
     printf("==============================================\n\n");
+    
+    /* Initialize random seed for hash randomization */
+    nanods_seed_init(0);
+    printf("Hash seed initialized:  0x%08X\n\n", nanods_get_seed());
     
     benchmark_map(1000);
     benchmark_map(10000);
